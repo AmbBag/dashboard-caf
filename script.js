@@ -60,6 +60,9 @@ function identificarHora(txt) {
   return -1;
 }
 
+// =======================
+// IDENTIFICA HORA EXTRA
+// =======================
 function identificarHoraExtra(txt) {
   const m = txt.match(/"(\d{2}):(\d{2})/);
   if (!m) return false;
@@ -67,6 +70,10 @@ function identificarHoraExtra(txt) {
   const h = Number(m[1]);
   const min = Number(m[2]);
 
+  // 🔥 00:00 até 06:59 = HORA EXTRA
+  if (h < 7) return true;
+
+  // 🔥 Após o turno
   return h > 16 || (h === 16 && min >= 48);
 }
 
@@ -166,9 +173,6 @@ function buscar() {
 
         const total = horas.reduce((a,b)=>a+b,0);
 
-        // =======================
-        // 🔥 TENDÊNCIA
-        // =======================
         let tendencia = 0;
         const metaBase = dataInput === hoje ? metaDiaDinamica() : META_DIA;
         if (metaBase > 0)
@@ -201,9 +205,6 @@ function buscar() {
         totalExtra += extra;
         totalGeral += total;
 
-        // =======================
-        // 🔥 TENDÊNCIA GERAL
-        // =======================
         let tendenciaGeral = 0;
         if (metaBase > 0)
           tendenciaGeral = Math.round((totalGeral / metaBase) * META_DIA);
@@ -229,4 +230,3 @@ document.addEventListener("DOMContentLoaded", () => {
   buscar();
   setInterval(buscar, 5000);
 });
-
