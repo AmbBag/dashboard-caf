@@ -2,7 +2,7 @@
 // FIREBASE
 // =======================
 const firebaseConfig = {
-  databaseURL: "https://appqrcode-8d0d2-default-rtdb.firebaseio.com/"
+  databaseURL: "https://leiturascaf-default-rtdb.firebaseio.com/"
 };
 firebase.initializeApp(firebaseConfig);
 
@@ -230,3 +230,4 @@ document.addEventListener("DOMContentLoaded", () => {
   buscar();
   setInterval(buscar, 5000);
 });
+
