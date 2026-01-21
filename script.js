@@ -134,7 +134,7 @@ function criarTabela() {
 }
 
 // =======================
-// BUSCAR
+// BUSCAR PRINCIPAL
 // =======================
 function buscar() {
   const dataInput = document.getElementById("data").value;
@@ -170,26 +170,16 @@ function buscar() {
 
         const total = horas.reduce((a,b)=>a+b,0);
 
-        // =======================
-        // META CORRIGIDA
-        // =======================
         let metaBase;
-
-        if (dataInput !== hoje) {
-          metaBase = META_DIA;
-        } else {
+        if (dataInput !== hoje) metaBase = META_DIA;
+        else {
           const agora = new Date();
-          if (agora.getHours() > 16 || (agora.getHours() === 16 && agora.getMinutes() >= 48)) {
-            metaBase = META_DIA;
-          } else {
-            metaBase = metaDiaDinamica();
-          }
+          metaBase = (agora.getHours() > 16 || (agora.getHours() === 16 && agora.getMinutes() >= 48))
+            ? META_DIA
+            : metaDiaDinamica();
         }
 
-        let tendencia = 0;
-        if (metaBase > 0)
-          tendencia = Math.round((total / metaBase) * META_DIA);
-
+        let tendencia = metaBase > 0 ? Math.round((total / metaBase) * META_DIA) : 0;
         const capacidade = Math.round((tendencia / META_DIA) * 100);
         const desvio = tendencia - META_DIA;
 
@@ -204,34 +194,115 @@ function buscar() {
 
         tds[10].textContent = extra;
         tds[11].textContent = total;
-
         tds[12].textContent = tendencia;
         tds[12].className = cor(tendencia, META_DIA);
-
         tds[13].textContent = capacidade + "%";
         tds[13].className = capacidade >= 100 ? "verde" : "vermelho";
-
         tds[14].textContent = desvio;
         tds[14].className = desvio >= 0 ? "verde" : "vermelho";
 
         totalExtra += extra;
         totalGeral += total;
 
-        let tendenciaGeral = 0;
-        if (metaBase > 0)
-          tendenciaGeral = Math.round((totalGeral / metaBase) * META_DIA);
-
         totalLinha.innerHTML = `
           <td><b>TOTAL</b></td>
           ${totalHoras.map(v => `<td>${v}</td>`).join("")}
           <td class="extra">${totalExtra}</td>
           <td>${totalGeral}</td>
-          <td class="preto">${tendenciaGeral}</td>
+          <td class="preto">${Math.round((totalGeral / META_DIA) * META_DIA)}</td>
           <td></td>
         `;
       });
   }
 }
+
+// =======================
+// GOOGLE SHEETS
+// =======================
+const SHEET_ID = "1H7dvP9uuJdl0lTQdILgoCqx3wbPeshcKNvP4Rr1UlXI";
+const SHEET_API_KEY = "AIzaSyBKh1Mci6mMD1hXWZLHtGrxO2qVzpUIlT0";
+const SHEET_RANGE = "C:J";
+ // A = NomeCliente | B = OP | C = QtdPlanejada
+
+function buscarOpsDia() {
+  const dataInput = document.getElementById("data").value;
+  if (!dataInput) return;
+
+  const data = formatarData(dataInput);
+  const tbodyOps = document.querySelector("#ops tbody");
+  tbodyOps.innerHTML = "";
+
+  const ops = {};
+  const promessas = [];
+
+  for (let i = 1; i <= 10; i++) {
+    const celula = `Celula${String(i).padStart(2,"0")}`;
+
+    promessas.push(
+      firebase.database()
+        .ref(`usuarios/${celula}/historico/${data}`)
+        .once("value")
+        .then(snap => {
+          const dados = snap.val() || {};
+
+          Object.entries(dados).forEach(([key, value]) => {
+            
+            // ======================
+            // CASO 1 — NORMAL
+            // ======================
+            if (!key.toLowerCase().includes("atualizada")) {
+              const op = key.split("-")[0];
+              ops[op] = (ops[op] || 0) + 1;
+            }
+
+            // ======================
+            // CASO 2 — ATUALIZADA
+            // ======================
+            else {
+              // value = array em string
+              try {
+                const arr = JSON.parse(value);
+                if (Array.isArray(arr) && arr.length > 0) {
+                  const opBruta = arr[0];
+                  const op = opBruta.split("-")[0];
+                  ops[op] = (ops[op] || 0) + 1;
+                }
+              } catch(e) {
+                console.warn("Erro ao parsear Atualizada:", value);
+              }
+            }
+
+          });
+        })
+    );
+  }
+
+  Promise.all(promessas).then(() => {
+    fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_RANGE}?key=${SHEET_API_KEY}`)
+      .then(r => r.json())
+      .then(sheet => {
+        const linhas = sheet.values || [];
+
+        Object.entries(ops).forEach(([op, total]) => {
+
+          // encontra OP na planilha
+          const linha = linhas.find(x => x[0] == op) || [];
+          const nomeCliente = linha[5] || "-";
+          const qtdPlanejada = linha[7] || "-";
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${nomeCliente}</td>
+            <td>${op}</td>
+            <td>${qtdPlanejada}</td>
+            <td>${total}</td>
+          `;
+          tbodyOps.appendChild(tr);
+        });
+      });
+  });
+}
+
 
 // =======================
 // INIT
@@ -240,6 +311,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("data").value = hojeISO();
   criarTabela();
   buscar();
-  setInterval(buscar, 5000);
+  buscarOpsDia();
+  setInterval(() => {
+    buscar();
+    buscarOpsDia();
+  }, 30000);
 });
-
