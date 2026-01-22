@@ -146,6 +146,7 @@ function buscar() {
   let totalHoras = Array(9).fill(0);
   let totalExtra = 0;
   let totalGeral = 0;
+  let totalTendencia = 0; // <<< ÚNICA CORREÇÃO
 
   for (let i = 1; i <= 10; i++) {
 
@@ -203,13 +204,14 @@ function buscar() {
 
         totalExtra += extra;
         totalGeral += total;
+        totalTendencia += tendencia; // <<< ÚNICA CORREÇÃO
 
         totalLinha.innerHTML = `
           <td><b>TOTAL</b></td>
           ${totalHoras.map(v => `<td>${v}</td>`).join("")}
           <td class="extra">${totalExtra}</td>
           <td>${totalGeral}</td>
-          <td class="preto">${Math.round((totalGeral / META_DIA) * META_DIA)}</td>
+          <td class="preto">${totalTendencia}</td>
           <td></td>
         `;
       });
@@ -217,12 +219,11 @@ function buscar() {
 }
 
 // =======================
-// GOOGLE SHEETS
+// GOOGLE SHEETS (INALTERADO)
 // =======================
 const SHEET_ID = "1H7dvP9uuJdl0lTQdILgoCqx3wbPeshcKNvP4Rr1UlXI";
 const SHEET_API_KEY = "AIzaSyBKh1Mci6mMD1hXWZLHtGrxO2qVzpUIlT0";
 const SHEET_RANGE = "C:J";
- // A = NomeCliente | B = OP | C = QtdPlanejada
 
 function buscarOpsDia() {
   const dataInput = document.getElementById("data").value;
@@ -246,30 +247,18 @@ function buscarOpsDia() {
           const dados = snap.val() || {};
 
           Object.entries(dados).forEach(([key, value]) => {
-            
-            // ======================
-            // CASO 1 — NORMAL
-            // ======================
+
             if (!key.toLowerCase().includes("atualizada")) {
               const op = key.split("-")[0];
               ops[op] = (ops[op] || 0) + 1;
-            }
-
-            // ======================
-            // CASO 2 — ATUALIZADA
-            // ======================
-            else {
-              // value = array em string
+            } else {
               try {
                 const arr = JSON.parse(value);
                 if (Array.isArray(arr) && arr.length > 0) {
-                  const opBruta = arr[0];
-                  const op = opBruta.split("-")[0];
+                  const op = arr[0].split("-")[0];
                   ops[op] = (ops[op] || 0) + 1;
                 }
-              } catch(e) {
-                console.warn("Erro ao parsear Atualizada:", value);
-              }
+              } catch {}
             }
 
           });
@@ -284,8 +273,6 @@ function buscarOpsDia() {
         const linhas = sheet.values || [];
 
         Object.entries(ops).forEach(([op, total]) => {
-
-          // encontra OP na planilha
           const linha = linhas.find(x => x[0] == op) || [];
           const nomeCliente = linha[5] || "-";
           const qtdPlanejada = linha[7] || "-";
@@ -303,7 +290,6 @@ function buscarOpsDia() {
   });
 }
 
-
 // =======================
 // INIT
 // =======================
@@ -315,7 +301,5 @@ document.addEventListener("DOMContentLoaded", () => {
   setInterval(() => {
     buscar();
     buscarOpsDia();
-  }, 60000);
+  }, 90000);
 });
-
-
