@@ -315,5 +315,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setInterval(() => {
     buscar();
     buscarOpsDia();
-  }, 30000);
+  }, 1000000);
 });
+
