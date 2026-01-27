@@ -275,7 +275,7 @@ function buscarOpsDia() {
         Object.entries(ops).forEach(([op, total]) => {
           const linha = linhas.find(x => x[0] == op) || [];
 
-          const codCliente = linha[3] || "-"; // <<< ADICIONADO
+          const codCliente = linha[3] || "-";
           const nomeCliente = linha[5] || "-";
           const qtdPlanejada = linha[7] || "-";
 
@@ -297,10 +297,19 @@ function buscarOpsDia() {
 // INIT
 // =======================
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("data").value = hojeISO();
+  const dataInput = document.getElementById("data");
+  dataInput.value = hojeISO();
+
   criarTabela();
   buscar();
   buscarOpsDia();
+
+  // >>> ÚNICA ADIÇÃO <<< 
+  dataInput.addEventListener("change", () => {
+    buscar();
+    buscarOpsDia();
+  });
+
   setInterval(() => {
     buscar();
     buscarOpsDia();
