@@ -221,9 +221,9 @@ function buscar() {
 // =======================
 // GOOGLE SHEETS
 // =======================
-const SHEET_ID = "1H7dvP9uuJdl0lTQdILgoCqx3wbPeshcKNvP4Rr1UlXI";
-const SHEET_API_KEY = "AIzaSyBKh1Mci6mMD1hXWZLHtGrxO2qVzpUIlT0";
-const SHEET_RANGE = "C:J";
+const SHEET_ID = "1Vn9PtS6VIG7N9edoBpWRYr9LsWqn1lXuQkxibYY7xiE";
+const SHEET_API_KEY = "AIzaSyBg75NHA-Vi2F-CY9L-Kr4CMBzhWuUJayg";
+const SHEET_RANGE = "A:C";
 
 function buscarOpsDia() {
   const dataInput = document.getElementById("data").value;
@@ -275,14 +275,12 @@ function buscarOpsDia() {
         Object.entries(ops).forEach(([op, total]) => {
           const linha = linhas.find(x => x[0] == op) || [];
 
-          const codCliente = linha[3] || "-";
-          const nomeCliente = linha[5] || "-";
-          const qtdPlanejada = linha[7] || "-";
+          const codCliente = linha[1] || "-";
+          const qtdPlanejada = linha[2] || "-";
 
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${codCliente}</td>
-            <td>${nomeCliente}</td>
             <td>${op}</td>
             <td>${qtdPlanejada}</td>
             <td>${total}</td>
